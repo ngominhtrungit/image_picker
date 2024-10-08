@@ -46,6 +46,7 @@ import com.yalantis.ucrop.UCropImageEngine
 import com.yalantis.ucrop.model.AspectRatio
 import com.yalantis.ucrop.util.FileUtils
 import com.yalantis.ucrop.view.CropImageView
+import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -66,6 +67,19 @@ private class AndroidQSandboxFileEngine : UriToFileTransformEngine {
         call: OnKeyValueResultCallbackListener?
     ) {
         call?.onCallback(srcPath, SandboxTransformUtils.copyPathToSandbox(context, srcPath, mineType))
+    }
+}
+
+private fun tryCatch(
+    tryBlock: () -> Unit,
+    catchBlock: (Throwable) -> Unit = { throwable ->
+        Log.e("tryCatch", "Error caught: ${throwable.message}")
+    }
+) {
+    try {
+        tryBlock()
+    } catch (t: Throwable) {
+        catchBlock(t)
     }
 }
 
@@ -146,12 +160,24 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                         if (result != null) {
                             mediaPickerResult?.success(buildResponse(result[0]))
                         } else {
-                            mediaPickerResult?.error("CAMERA_ERROR", "Camera error", null)
+                            tryCatch(tryBlock = {
+                                mediaPickerResult?.error(
+                                    "CAMERA_ERROR",
+                                    "Camera error",
+                                    null
+                                )
+                            })
                         }
                     }
 
                     override fun onCancel() {
-                        mediaPickerResult?.error("CANCELED", "User has canceled the picker", null)
+                        tryCatch(tryBlock = {
+                            mediaPickerResult?.error(
+                                "CANCELED",
+                                "User has canceled the picker",
+                                null
+                            )
+                        })
                     }
                 })
     }
@@ -247,7 +273,13 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
 
                     override fun onCancel() {
                         shouldReturnOnDestroy = false
-                        mediaPickerResult?.error("CANCELED", "User has canceled the picker", null)
+                        tryCatch(tryBlock = {
+                            mediaPickerResult?.error(
+                                "CANCELED",
+                                "User has canceled the picker",
+                                null
+                            )
+                        })
                     }
                 })
     }
@@ -364,10 +396,10 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         dialog.setContentTextColor(Color.parseColor("#000000"))
         dialog.setOnDialogClickListener {
             dialog.dismiss()
-            PermissionUtil.goIntentSetting(fragment, requestCode);
+            PermissionUtil.goIntentSetting(fragment, requestCode)
         }
         dialog.setOnCancelListener {
-            PermissionUtil.goIntentSetting(fragment, requestCode);
+            PermissionUtil.goIntentSetting(fragment, requestCode)
         }
         dialog.show()
     }
@@ -436,7 +468,9 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         val inputUri = if (PictureMimeType.isContent(imagePath)) Uri.parse(imagePath) else Uri.fromFile(File(imagePath))
         val sandboxPath = getSandboxPath()
         if (sandboxPath == null) {
-            mediaPickerResult?.error("CROPPER_ERROR", "Can't get output path", null)
+            tryCatch(tryBlock = {
+                mediaPickerResult?.error("CROPPER_ERROR", "Can't get output path", null)
+            })
             return
         }
         val compressQuality = flutterCall?.argument<Double>("cropCompressQuality") ?: 0.9
@@ -509,7 +543,9 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 val outputUri = UCrop.getOutput(data)
                 val imagePath = outputUri?.path
                 if(outputUri == null || imagePath == null) {
-                    mediaPickerResult?.error("CROPPER_ERROR", "Crop error", null)
+                    tryCatch(tryBlock = {
+                        mediaPickerResult?.error("CROPPER_ERROR", "Crop error", null)
+                    })
                     return true
                 }
                 val imageFile = File(imagePath)
@@ -524,7 +560,9 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 item["height"] = UCrop.getOutputImageHeight(data)
                 mediaPickerResult?.success(item)
             } else {
-                mediaPickerResult?.error("CROPPER_ERROR", "Crop error", null)
+                tryCatch(tryBlock = {
+                    mediaPickerResult?.error("CROPPER_ERROR", "Crop error", null)
+                })
             }
             return true
         }
