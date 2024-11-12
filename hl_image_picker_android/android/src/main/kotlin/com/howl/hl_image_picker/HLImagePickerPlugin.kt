@@ -158,7 +158,9 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 .forResultActivity(object : OnResultCallbackListener<LocalMedia> {
                     override fun onResult(result: ArrayList<LocalMedia>?) {
                         if (result != null) {
-                            mediaPickerResult?.success(buildResponse(result[0]))
+                            tryCatch(tryBlock = {
+                                mediaPickerResult?.success(buildResponse(result[0]))
+                            })
                         } else {
                             tryCatch(tryBlock = {
                                 mediaPickerResult?.error(
@@ -253,7 +255,9 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                     override fun onDestroy(fragment: Fragment?) {
                         if(fragment is PictureSelectorFragment && shouldReturnOnDestroy) {
                             val mediaList: List<Map<String, Any>> = listOf()
-                            mediaPickerResult?.success(mediaList)
+                            tryCatch(tryBlock = {
+                                mediaPickerResult?.success(mediaList)
+                            })
                         }
                     }
                 })
@@ -268,7 +272,9 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                                 mediaList.add(buildResponse(media))
                             }
                         }
-                        mediaPickerResult?.success(mediaList)
+                        tryCatch(tryBlock = {
+                            mediaPickerResult?.success(mediaList)
+                        })
                     }
 
                     override fun onCancel() {
@@ -558,7 +564,9 @@ class HLImagePickerPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
                 item["type"] = "image"
                 item["width"] = UCrop.getOutputImageWidth(data)
                 item["height"] = UCrop.getOutputImageHeight(data)
-                mediaPickerResult?.success(item)
+                tryCatch(tryBlock = {
+                    mediaPickerResult?.success(item)
+                })
             } else {
                 tryCatch(tryBlock = {
                     mediaPickerResult?.error("CROPPER_ERROR", "Crop error", null)
